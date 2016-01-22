@@ -18,7 +18,7 @@ Param
     [String]$UseExistingSQLServer,
 
     [Parameter(ValueFromPipelineByPropertyName=$True)]
-    [String]$SQLInstallationSourcePath,
+    [String]$SQLInstallationSourcePath
 )
 
 Begin
@@ -49,6 +49,8 @@ Begin
         {
             Write-Verbose ".Net Framework 3.5 status - Not Available"
             Write-Host ".Net Framework 3.5 status - Not Available (FAILED)" -ForegroundColor Red
+            $DotNetAvailable = $false
+            <# Skipping Installation of .Net Framework
             Write-Verbose "Attempting to install .Net Framework 3.5"
             Write-Host "Installing .Net Framework 3.5" -ForegroundColor Yellow
 
@@ -81,6 +83,7 @@ Begin
                 Write-Host "Error while installing .Net Framework 3.5.`n$($Error[0].Exception.Message)" -ForegroundColor Red
                 $DotNetAvailable = $false
             }
+            #>
         }
 
         # Checking Domain membership availability
@@ -119,7 +122,7 @@ Begin
         }
     }
 
-    Function Install-SqlServer2012
+    Function Install-SqlServer
     {
         Param
         (
@@ -140,7 +143,7 @@ Begin
     )
 
         # BEGIN - Create Configuration file for Silent Installation
-        Write-Verbose "BEGIN FUNCTION: Install-SqlServer2012"
+        Write-Verbose "BEGIN FUNCTION: Install-SqlServer"
 
         $SQLSetupLogFile = "C:\Program Files\Microsoft SQL Server\110\Setup Bootstrap\Log\Summary.txt"
         $SQLConfigFilePath = "C:\SQLSetup\SQLConfig.ini"
@@ -209,7 +212,7 @@ FTSVCACCOUNT="NT Service\MSSQLFDLauncher"
         }
         # END - Create Configuration file for silent installation
 
-        Write-Verbose "Cheking prerequisites for SQL 2012."
+        Write-Verbose "Cheking prerequisites for SQL."
         If(Check-SQLAndDPMPrerequisites -WindowsSourceFilesPath $WindowsSourceFilesPath)
         {
             Write-Verbose "All prerequisites met for installing SQL for DPM. Starting SQL installation."
@@ -222,7 +225,7 @@ FTSVCACCOUNT="NT Service\MSSQLFDLauncher"
 
                 Write-Verbose "Starting SQL Server installation from $ExecutablePath with argument $SetupArguments"
                 Write-Host "Installing SQL Server. Please wait:" -ForegroundColor Cyan
-                Try # To install SQL Server 2012
+                Try # To install SQL Server
                 {
                     $InstallationProcess = Start-Process -FilePath $ExecutablePath -ArgumentList $SetupArguments -PassThru
                     Do
@@ -256,9 +259,9 @@ FTSVCACCOUNT="NT Service\MSSQLFDLauncher"
         }
         Else
         {
-            Write-Host "Target computer does not meet the prerequisites for installing SQL 2012" -ForegroundColor Red
+            Write-Host "Target computer does not meet the prerequisites for installing SQL" -ForegroundColor Red
         }
-        Write-Verbose "END FUNCTION: Install-SqlServer2012"
+        Write-Verbose "END FUNCTION: Install-SqlServer"
     }
 }
 
@@ -302,7 +305,7 @@ Process
             {
                 Write-Verbose "NO SQL Server instance available on this computer"
                 Write-Host "Starting installation of SQL Server" -ForegroundColor Green
-                Install-SqlServer2012 -WindowsSourceFilesPath $WindowsSourceFilesPath -SQLInstanceName $SQLInstanceName -SQLAdminAccountName $SQLAdminAccountName -SQLAdminAccountPassword $SQLAdminAccountPassword -SQLInstallationSourcePath $SQLInstallationSourcePath
+                Install-SqlServer -WindowsSourceFilesPath $WindowsSourceFilesPath -SQLInstanceName $SQLInstanceName -SQLAdminAccountName $SQLAdminAccountName -SQLAdminAccountPassword $SQLAdminAccountPassword -SQLInstallationSourcePath $SQLInstallationSourcePath
             }
         }
         Catch
@@ -310,7 +313,7 @@ Process
             Return "Error occured while verifying the SQL installation.`n$($Error[0].Exception.Message)"
         }
     }
-    #endregion END - Step 1: Install SQL Server 2012
+    #endregion END - Step 1: Install SQL Server
 }
 
 End {}

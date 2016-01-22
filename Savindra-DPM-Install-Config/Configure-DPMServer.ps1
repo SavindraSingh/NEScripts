@@ -85,7 +85,9 @@ Begin
         {
             If($Error[0].CategoryInfo.Reason -eq "CommandNotFoundException")
             {
-                Write-Warning "Azure PowerShell is not installed/available on this comuter.`nAttempting download and install."
+                Write-Warning "Azure PowerShell is not installed/available on this comuter."
+                EXIT
+                <# Prerequisites missing - Skipping download and install
                 #region BEGIN - Download and install Azure PowerShell
                         ######################[ Begin: Download Azure PowerShell ]########################
                         Write-Verbose "Checking if download directory exists"
@@ -143,7 +145,7 @@ Begin
                             Try
                             {
                                 Get-AzureSubscription -ErrorAction Stop | Out-Null
-                                Write-Host "MARS Agent installation verified successfully." -ForegroundColor Green
+                                Write-Host "Azure PowerShell installation verified successfully." -ForegroundColor Green
                             }
                             Catch
                             {
@@ -153,6 +155,7 @@ Begin
                             }
                         ######################[ END: Installation of Azure PowerShell ]##########################
                 #endregion END - Download and install Azure PowerShell
+                #>
             }
         }
     }
@@ -198,7 +201,7 @@ Begin
         )
 
         Write-Verbose "BEGIN FUNCTION: Configure-DPMServer"
-        ######################[ Begin: Login to Azure Account ]########################
+        #region #####################[ Begin: Login to Azure Account ]########################
         Write-Verbose "Attempting login to Azure account"
         Try
         {
@@ -256,55 +259,9 @@ Begin
                 }
             }
         }
-        ######################[ END: Login to Azure Account ]########################
+        #endregion #####################[ END: Login to Azure Account ]########################
 
-        ######################[ Begin: Call to Backup Vault Creation Function ]########################
-
-        Write-Verbose "Calling Create-NewBackupVault function with below parameters:`nResourceGroupName = $ResourceGroupName`nVaultName = $VaultName`nLocation = $Location`nSubscriptionID = $SubscriptionID"
-
-        Create-NewBackupVault -ResourceGroupName $ResourceGroupName -VaultName $VaultName -Location $Location -SubscriptionID $SubscriptionID
-
-        ######################[ END: Call to Backup Vault Creation Function ]########################
-
-        ######################[ Begin: Download MARS Agent for DPM ]########################
-        Write-Verbose "Checking if download directory exists"
-        $DownloadDirectory = If(Get-ChildItem -Path 'C:\Downloads' -ErrorAction SilentlyContinue)
-                             {
-                                "C:\Downloads"
-                             }
-                             Else
-                             {
-                                Try { (Mkdir -Path "C:\Downloads" -Force -ErrorAction Stop).FullName }
-                                Catch
-                                {
-                                    Return "Unable to create folder to store Downloads at C:\Downloads.`nYou can try again after creating the directory manually.`n$($Error[0].Exception.Message)"
-                                }
-                             }
-
-        $DownloadURL = "http://aka.ms/azurebackup_agent"
-        $OutFile = "$DownloadDirectory\MARSAgentInstaller.exe"
-        $MARSParams = "/q /nu"
-
-        If(Get-ChildItem -Path 'C:\Downloads\MARSAgentInstaller.exe' -ErrorAction SilentlyContinue)
-        {
-            Write-Verbose "C:\Downloads\MARSAgentInstaller.exe File already exists. Skipping file download."
-        }
-        Else
-        {
-            Write-Verbose "C:\Downloads\MARSAgentInstaller.exe File does not exist. Downloading from Microsoft."
-            Try
-            {
-                Invoke-WebRequest -URI $DownloadURL -OutFile $OutFile -ErrorAction Stop
-            }
-            Catch
-            {
-                Write-Warning "Error downloading MARSAgentInstaller.exe"
-                Return "`n$($Error[0].Exception.Message)"
-            }
-        }
-        ######################[ END: Download MARS Agent for DPM ]##########################
-
-        ######################[ Begin: Installation of MARS Agent for DPM ]##########################
+        #region #####################[ Begin: Download MARS Agent for DPM ]########################
         # Check if Agent is already installed before installation
         $InstalledAgent = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall -ErrorAction SilentlyContinue | Where {$_.GetValue("DisplayName") -eq "Microsoft Azure Recovery Services Agent" -and $_.Name.Contains("Windows Azure Backup") } 
 
@@ -315,6 +272,44 @@ Begin
         }
         Else
         {
+            Write-Verbose "Checking if download directory exists"
+            $DownloadDirectory = If(Get-ChildItem -Path 'C:\Downloads' -ErrorAction SilentlyContinue)
+                                 {
+                                    "C:\Downloads"
+                                 }
+                                 Else
+                                 {
+                                    Try { (Mkdir -Path "C:\Downloads" -Force -ErrorAction Stop).FullName }
+                                    Catch
+                                    {
+                                        Return "Unable to create folder to store Downloads at C:\Downloads.`nYou can try again after creating the directory manually.`n$($Error[0].Exception.Message)"
+                                    }
+                                 }
+
+            $DownloadURL = "http://aka.ms/azurebackup_agent"
+            $OutFile = "$DownloadDirectory\MARSAgentInstaller.exe"
+            $MARSParams = "/q /nu"
+
+            If(Get-ChildItem -Path 'C:\Downloads\MARSAgentInstaller.exe' -ErrorAction SilentlyContinue)
+            {
+                Write-Verbose "C:\Downloads\MARSAgentInstaller.exe File already exists. Skipping file download."
+            }
+            Else
+            {
+                Write-Verbose "C:\Downloads\MARSAgentInstaller.exe File does not exist. Downloading from Microsoft."
+                Try
+                {
+                    Invoke-WebRequest -URI $DownloadURL -OutFile $OutFile -ErrorAction Stop
+                }
+                Catch
+                {
+                    Write-Warning "Error downloading MARSAgentInstaller.exe"
+                    Return "`n$($Error[0].Exception.Message)"
+                }
+            }
+            ######################[ END: Download MARS Agent for DPM ]##########################
+
+            ######################[ Begin: Installation of MARS Agent for DPM ]##########################
             Write-Verbose "Attempting to install Microsoft Azure Recovery Services Agent on this computer."
             Write-Host "Installing MARS Agent for DPM: " -NoNewline
             Start-Job -ScriptBlock {& $OutFile $MARSParams} | Out-Null
@@ -339,7 +334,7 @@ Begin
         }
         ######################[ END: Installation of MARS Agent for DPM ]##########################
 
-        ######################[ BEGIN: DPM Cloud registration process ]############################
+        #region #####################[ BEGIN: DPM Cloud registration process ]############################
         Try
         {
             Write-Verbose "Connecting to backup valut - $VaultName"
@@ -350,10 +345,12 @@ Begin
             If($Error[0].Exception.Message -eq "The specified resource does not exist.")
             {
                 Return "Error connecting to backup vault: $VaultName under resource group $ResourceGroupName.`nCheck if both of these resources exist on Azure."
+                EXIT
             }
             Else
             {
                 Return "Error connecting to backup vault:`n$($Error[0].Exception.Message)"
+                EXIT
             }
         }
 
@@ -366,6 +363,7 @@ Begin
         Catch
         {
             Return "Error retrieving Vault credentials for backup vault $($VaultName):`n$($Error[0].Exception.Message)"
+            EXIT
         }
 
         # Actual registration process on Azure cloud
@@ -378,8 +376,9 @@ Begin
         Catch
         {
             Return "Error registering DPM Server $DPMServerName on Azure cloud.:`n$($Error[0].Exception.Message)"
+            EXIT
         }
-        ######################[ END: DPM Cloud registration process ]############################
+        #endregion #####################[ END: DPM Cloud registration process ]############################
 
         ######################[ BEGIN: Initial configuration settings ]############################
         Try
@@ -458,70 +457,9 @@ Process
     }
     #endregion END - Step 1: Validate all the parameters and combinations
 
-    #region BEGIN - Step 2: Install SQL Server 2012
-    Write-Verbose "Verifying availability of SQL server"
-    If($UseExistingSQLServer -eq "Yes")
-    {
-        Try
-        {
-            # Verifying if this server already have SQL Server Role
-            $Roles = (Get-WmiObject -Query "SELECT Roles FROM Win32_ComputerSystem").Roles
-
-            If(-not($Roles -like "SQLServer").Length -eq 0)
-            {
-                # SQL Server Role is already available on this machine Skipping installation
-                Write-Verbose "SQL Server already available on this computer"
-                Write-Host "Skipping installation of SQL Server. Already available on local machine" -ForegroundColor Green
-            }
-        }
-        Catch
-        {
-            Return "Error occured while verifying the SQL installation.`n$($Error[0].Exception.Message)"
-        }
-    }
-    Else
-    {
-        Try
-        {
-            # Checking if this server already have SQL Server Role
-            $Roles = (Get-WmiObject -Query "SELECT Roles FROM Win32_ComputerSystem").Roles
-
-            If(-not($Roles -like "SQLServer").Length -eq 0)
-            {
-                # SQL Server Role is already available on this machine
-                Write-Verbose "SQL Server already available on this computer"
-                Write-Host "Skipping installation of SQL Server. Already available on local machine" -ForegroundColor Green
-            }
-            Else
-            {
-                Write-Verbose "NO SQL Server instance available on this computer"
-                Write-Host "Starting installation of SQL Server" -ForegroundColor Green
-                Install-SqlServer2012 -WindowsSourceFilesPath $WindowsSourceFilesPath -SQLInstanceName $SQLInstanceName -SQLAdminAccountName $SQLAdminAccountName -SQLAdminAccountPassword $SQLAdminAccountPassword -SQLInstallationSourcePath $SQLInstallationSourcePath
-            }
-        }
-        Catch
-        {
-            Return "Error occured while verifying the SQL installation.`n$($Error[0].Exception.Message)"
-        }
-    }
-    #endregion END - Step 2: Install SQL Server 2012
-
-    #region BEGIN - Step 3: Install SC DPM 2012
-    If(-not($UseExistingDPMServer -eq "Yes"))
-    {
-        Install-DPMServer -AdministratorUserName "$DPMServerName\Administrator" -CompanyNameForDPM $CompanyNameForDPM -DPMInstallationSourcePath $DPMInstallationSourcePath 
-    }
-    #endregion END - Step 3: Install SC DPM 2012
-
-    #region BEGIN - Step 4: Create New Azure Backup Vault
-
-    Create-NewBackupVault -ResourceGroupName $ResourceGroupName -VaultName $VaultName -SubscriptionID $SubscriptionID -Location $Location  
-
-    #endregion END - Step 4: Create New Azure Backup Vault
-
-    #region BEGIN - Step 5: Configure DPM to connect with Azure Backup Vault
+    #region BEGIN - Step 2: Configure DPM to connect with Azure Backup Vault
     Configure-DPMServer -SubscriptionID $SubscriptionID -ResourceGroupName $ResourceGroupName -VaultName $VaultName -DPMServerName $DPMServerName -Location $Location
-    #endregion END - Step 5: Configure DPM to connect with Azure Backup Vault
+    #endregion END - Step 2: Configure DPM to connect with Azure Backup Vault
 }
 
 End {}

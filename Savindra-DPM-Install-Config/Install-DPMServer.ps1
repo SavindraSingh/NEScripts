@@ -140,6 +140,7 @@ CompanyName = "$CompanyNameForDPM"
         Write-Verbose "Checking Windows featurs required for DPM installation"
         If(-not((Get-WindowsOptionalFeature -Online -FeatureName SIS-Limited).State -eq ""))
         {
+        <# Skipping Installation of SIS-Limited as prerequisite
             Write-Verbose "Windows feature - Windows Single Instance Store (SIS) is not avaliable. Attempting install."
             Try
             {
@@ -152,6 +153,9 @@ CompanyName = "$CompanyNameForDPM"
                 Write-Host "Error installing Windows feature SIS-Limited.`nTry to install it manually and try again.`n$($Error[0].Exception.Message)"
                 EXIT
             }
+        #>
+            Write-Host "Unable to find required prerequisite 'SIS-Limited'. Please install the same and try again."
+            EXIT
         }
 
         If(Test-Path -Path "C:\DPMSetup")
@@ -212,7 +216,7 @@ Process
     {
         Install-DPMServer -AdministratorUserName "$AdministratorUserName" -CompanyNameForDPM $CompanyNameForDPM -DPMInstallationSourcePath $DPMInstallationSourcePath 
     }
-    #endregion END - Step 3: Install SC DPM 2012
+    #endregion END - Step 1: Install SC DPM 2012
 }
 
 End {}
