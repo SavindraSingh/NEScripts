@@ -155,6 +155,7 @@ CompanyName = "$CompanyNameForDPM"
             }
         #>
             Write-Host "Unable to find required prerequisite 'SIS-Limited'. Please install the same and try again."
+            Return "Installation Failed"
             EXIT
         }
 

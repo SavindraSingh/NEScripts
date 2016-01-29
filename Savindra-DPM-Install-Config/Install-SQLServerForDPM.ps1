@@ -246,12 +246,12 @@ FTSVCACCOUNT="NT Service\MSSQLFDLauncher"
                     }
                     Else
                     {
-                         Write-Verbose "Verifying SQL Setup if installed correctly"
+                         Write-Verbose "SQL Server verification failed. Check log file for details or verify the SQL availability manually."
                     }
                 }
                 Catch
                 {
-                    Write-Host "An error occured while installing SQL Server 2012.`n$($Error[0].Exception.Message)" -ForegroundColor Red
+                    Write-Host "An error occured while installing SQL Server.`n$($Error[0].Exception.Message)" -ForegroundColor Red
                     Return "Error while installing SQL Server"
                     EXIT
                 }

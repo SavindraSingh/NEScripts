@@ -261,7 +261,7 @@ Begin
         }
         #endregion #####################[ END: Login to Azure Account ]########################
 
-        #region #####################[ Begin: Download MARS Agent for DPM ]########################
+        #region #####################[ Begin: Download/install MARS Agent for DPM ]########################
         # Check if Agent is already installed before installation
         $InstalledAgent = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall -ErrorAction SilentlyContinue | Where {$_.GetValue("DisplayName") -eq "Microsoft Azure Recovery Services Agent" -and $_.Name.Contains("Windows Azure Backup") } 
 
@@ -332,9 +332,9 @@ Begin
             Else
             { Write-Host "MARS Agent installation verified successfully." -ForegroundColor Green}
         }
-        ######################[ END: Installation of MARS Agent for DPM ]##########################
+        #endregion #####################[ END: Installation of MARS Agent for DPM ]##########################
 
-        #region #####################[ BEGIN: DPM Cloud registration process ]############################
+        #region #####################[ BEGIN: Register DPM on Azure cloud ]############################
         Try
         {
             Write-Verbose "Connecting to backup valut - $VaultName"
@@ -378,9 +378,9 @@ Begin
             Return "Error registering DPM Server $DPMServerName on Azure cloud.:`n$($Error[0].Exception.Message)"
             EXIT
         }
-        #endregion #####################[ END: DPM Cloud registration process ]############################
+        #endregion #####################[ END: Register DPM on Azure cloud ]############################
 
-        ######################[ BEGIN: Initial configuration settings ]############################
+        #region #####################[ BEGIN: Initial configuration settings ]############################
         Try
         {
             If($CustomizeDPMSubscriptionSettings -eq "Yes")
@@ -437,8 +437,8 @@ Begin
         {
             Return "Error updating DPM Subscription settings:'n$($Error[0].Exception.Message)"
         }
-        ######################[ END: Initial configuration settings ]############################
-        Write-Verbose "END FUNCTION: Configure-DPMServer"
+        #endregion #####################[ END: Initial configuration settings ]############################
+        Write-Verbose "END Of FUNCTION: Configure-DPMServer"
     }
 }
 
