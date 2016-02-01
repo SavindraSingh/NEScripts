@@ -67,12 +67,12 @@ Else
     }
     Catch
     {
-        Write-Warning "Error downloading Azure PowerShell"
+        Write-Warning "Error downloading Azure Site Recovery Provider"
         Write-Host "`n$($Error[0].Exception.Message)" -ForegroundColor Red
         Return $false
     }
 }
-#endregion #####################[ END: Download Azure PowerShell ]##########################
+#endregion #####################[ END: Download Azure Site Recovery Provider ]##########################
 
 # 4.1.Extract the files using the downloaded provider by running the following command
 try

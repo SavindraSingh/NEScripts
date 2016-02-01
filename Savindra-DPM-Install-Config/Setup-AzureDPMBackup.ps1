@@ -70,8 +70,8 @@ Param
     [Parameter(ValueFromPipelineByPropertyName=$True)]
     [String]$StagingAreaPath,
 
-    [Parameter(ValueFromPipelineByPropertyName=$True)]
-    [String]$EncryptionPassPhrase,
+#    [Parameter(ValueFromPipelineByPropertyName=$True)]
+#    [String]$EncryptionPassPhrase,
 
     [Parameter(ValueFromPipelineByPropertyName=$True)]
     [String]$ProxyServerAddress,
@@ -641,7 +641,7 @@ CompanyName = "$CompanyNameForDPM"
             [Parameter(ValueFromPipelineByPropertyName=$True)]
             [ValidateSet('Yes','No')]
             [String]$SetEncryption,
-            [String]$EncryptionPassPhrase,
+#            [String]$EncryptionPassPhrase,
             [Parameter(ValueFromPipelineByPropertyName=$True)]
             [ValidateSet('Yes','No')]
             [String]$SetProxy,
@@ -768,7 +768,7 @@ CompanyName = "$CompanyNameForDPM"
             ######################[ Begin: Installation of MARS Agent for DPM ]##########################
             Write-Verbose "Attempting to install Microsoft Azure Recovery Services Agent on this computer."
             Write-Host "Installing MARS Agent for DPM: " -NoNewline
-            Start-Job -ScriptBlock {& $OutFile $MARSParams} | Out-Null
+            Start-Job -ScriptBlock {Start-Process -FilePath  $OutFile -ArgumentList $MARSParams } | Out-Null
             Do
             {
                 Write-Host "$([char]9616)" -NoNewline -ForegroundColor Green
@@ -857,8 +857,25 @@ CompanyName = "$CompanyNameForDPM"
                 {
                     # Encryption Settings
                     Write-Verbose "Customizing Encryption settings."
-                    $PassPhrase = ConvertTo-SecureString $EncryptionPassPhrase -AsPlainText -Force
-                    Set-DPMCloudSubscriptionSetting -DPMServerName $DPMServerName -SubscriptionSetting $SubsSettings -EncryptionPassphrase $PassPhrase
+                    Try
+                    {
+                        $EncryptionPassPhrase = -join (-join (-join (-join (-join ($(64..90) | %{$_} | %{[int]$_} | %{[char]$_} | Get-Random -Count 7), -join ($(97..122)| %{$_} | %{[int]$_} | %{[char]$_} | Get-Random -Count 7)), ($(49..57)| %{$_} | %{[int]$_} | %{[char]$_} | Get-Random -Count 1)), ("95","36","33"| %{$_} | %{[int]$_} | %{[char]$_} | Get-Random -Count 1)) | %{[char[]]$_} | %{[char]$_} | Get-Random -Count 16) 
+                        $PassPhrase = ConvertTo-SecureString $EncryptionPassPhrase -AsPlainText -Force
+                        Try 
+                        {
+                            $EncryptionFilePath = New-Item -Path "C:\DPMSettings" -Force -ErrorAction Stop
+                            Out-File -FilePath "$EncryptionFilePath\EncryptionPassPhrase.txt" -Force -NoNewline -InputObject $EncryptionPassPhrase
+                        }
+                        Catch
+                        {
+                            Return "Error saving Encryption Passphrase to file.`n$($Error[0].Exception.Message)"
+                        }
+                        Set-DPMCloudSubscriptionSetting -DPMServerName $DPMServerName -SubscriptionSetting $SubsSettings -EncryptionPassphrase $PassPhrase
+                    }
+                    Catch
+                    {
+                        Write-Host "Error customizing Encryption settings:`n$($Error[0].Exception.Message)"-ForegroundColor Red
+                    }
                 }
 
                 If($SetProxy -eq "Yes")
