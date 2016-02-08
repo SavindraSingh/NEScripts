@@ -115,4 +115,3 @@ Push-Location $BinPath
 $encryptionFilePath = "C:\temp\"
 & ".\DRConfigurator.exe /r /Credentials $VaultSettingFilePath /vmmfriendlyname $env:COMPUTERNAME /dataencryptionenabled $encryptionFilePath /startvmmservice"
 
-
