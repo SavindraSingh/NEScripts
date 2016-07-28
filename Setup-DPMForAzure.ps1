@@ -129,7 +129,7 @@ Begin
                                              }
 
                         $APSDownloadURL = "http://aka.ms/azure-powershellget"
-                        $APSOutFile = "$DownloadDirectory\azure-powershell.1.0.2.msi"
+                        $APSOutFile = "$DownloadDirectory\azure-powershell.msi"
                         $APSParams = "/passive"
 
                         If(Get-ChildItem -Path $APSOutFile -ErrorAction SilentlyContinue)

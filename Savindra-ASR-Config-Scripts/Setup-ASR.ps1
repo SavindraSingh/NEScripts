@@ -18,12 +18,12 @@ $VaultGeo  = "Southeast Asia"
 $OutputPathForSettingsFile = "c:\Temp"
 
 New-AzureSiteRecoveryVault -Location $VaultGeo -Name $VaultName;
-$vault = Get-AzureSiteRecoveryVault -Name $VaultName;
+$Vault = Get-AzureSiteRecoveryVault -Name $VaultName;
 
 # Step 3: Generate a vault registration key
 #      3.1. Get the vault setting file and set the context:
 
-$VaultSetingsFile = Get-AzureSiteRecoveryVaultSettingsFile -Location $VaultGeo -Name $VaultName -Path $OutputPathForSettingsFile
+$VaultSetingsFile = Get-AzureSiteRecoveryVaultSettingsFile -Location $Vault.Location -Name $Vault.Name -Path $OutputPathForSettingsFile
 
 #      3.2. Set the vault context by running the following commands:
 $VaultSettingFilePath = $vaultSetingsFile.FilePath 
